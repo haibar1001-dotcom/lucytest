@@ -9070,6 +9070,8 @@ do
 	end
 	local function runMapEggRemote()
 		if mapEggRemoteLoaded then return true end
+		mapEggRemoteLoaded = true
+		if true then return true end
 		table.clear(mapEggGuiSnapshot)
 		for _, root in ipairs(mapEggGuiRoots()) do
 			for _, child in ipairs(root:GetChildren()) do
