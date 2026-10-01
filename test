@@ -19,6 +19,86 @@ if not game:IsLoaded() then
 end
 local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer or Players.LocalPlayerAdded:Wait()
+
+-- KeyAuth HWID gate. Keep this before UI and feature initialization.
+local LucyAuth = {
+	Name = "Lucyhub rap_normal",
+	OwnerId = "IJKzLhcvEZ",
+	Secret = "5945f33d33a7b51fad603c9726f220e212249e195f0736910ac2aec907d7d07e",
+	Version = "1.0",
+}
+local function lucyTrim(value)
+	return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+local function lucyEncode(value)
+	return tostring(value or ""):gsub("([^%w%-_%.~])", function(char)
+		return string.format("%%%02X", string.byte(char))
+	end)
+end
+local function lucyRequest()
+	local env = getgenv()
+	local candidates = {
+		type(env) == "table" and env.request,
+		type(env) == "table" and env.http_request,
+		type(env) == "table" and type(env.syn) == "table" and env.syn.request,
+		type(env) == "table" and type(env.http) == "table" and env.http.request,
+		request, http_request,
+		type(syn) == "table" and syn.request,
+		type(http) == "table" and http.request,
+	}
+	for _, candidate in ipairs(candidates) do
+		if type(candidate) == "function" then return candidate end
+	end
+	return nil
+end
+local function lucyAuthPost(req, fields)
+	local body = {}
+	for key, value in pairs(fields) do body[#body + 1] = lucyEncode(key) .. "=" .. lucyEncode(value) end
+	local ok, response = pcall(req, {
+		Url = "https://keyauth.win/api/1.2/",
+		Method = "POST",
+		Headers = { ["Content-Type"] = "application/x-www-form-urlencoded" },
+		Body = table.concat(body, "&"),
+	})
+	if not ok then return nil end
+	local raw = type(response) == "table" and response.Body or response
+	if type(raw) ~= "string" then return nil end
+	local decodedOk, decoded = pcall(function() return HttpService:JSONDecode(raw) end)
+	return decodedOk and type(decoded) == "table" and decoded or nil
+end
+local function lucyVerifyHWID()
+	local env = getgenv()
+	local key = lucyTrim(type(env) == "table" and env.LucyhubKey)
+	if key == "" then return false, "No Lucyhub key was provided." end
+	local hwid
+	if type(gethwid) == "function" then
+		local ok, value = pcall(gethwid)
+		if ok and lucyTrim(value) ~= "" then hwid = lucyTrim(value) end
+	end
+	if not hwid then
+		local ok, value = pcall(function()
+			return game:GetService("RbxAnalyticsService"):GetClientId()
+		end)
+		if ok and lucyTrim(value) ~= "" then hwid = lucyTrim(value) end
+	end
+	if not hwid then return false, "Could not read this device HWID." end
+	local req = lucyRequest()
+	if not req then return false, "This executor has no supported HTTP request function." end
+	local init = lucyAuthPost(req, { type = "init", name = LucyAuth.Name, ownerid = LucyAuth.OwnerId, secret = LucyAuth.Secret, ver = LucyAuth.Version })
+	if not init or init.success ~= true or lucyTrim(init.sessionid) == "" then
+		return false, tostring(init and (init.message or init.msg) or "KeyAuth initialization failed.")
+	end
+	local login = lucyAuthPost(req, { type = "license", key = key, hwid = hwid, sessionid = init.sessionid, name = LucyAuth.Name, ownerid = LucyAuth.OwnerId })
+	if not login or login.success ~= true then
+		return false, tostring(login and (login.message or login.msg) or "Key/HWID verification failed.")
+	end
+	return true
+end
+local lucyAuthOk, lucyAuthMessage = lucyVerifyHWID()
+if not lucyAuthOk then
+	pcall(function() localPlayer:Kick("\n\n[LUCY HUB]\nAccess denied\n" .. lucyAuthMessage) end)
+	return
+end
 -- One stable profile for Ride A Pet. It is written continuously whenever a
 -- flag changes so a crash or reconnect does not lose the latest settings.
 local configFileName = "config_rap_Lucy.json"
