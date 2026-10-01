@@ -5,6 +5,15 @@ local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local ContentProvider = game:GetService("ContentProvider")
 
+-- A few executors do not expose getgenv. MapEggs_Standalone starts by
+-- reading getgenv().MapEggsTracker, so provide a harmless shared fallback
+-- before any remote module is loaded.
+if type(getgenv) ~= "function" then
+	getgenv = function()
+		return _G
+	end
+end
+
 if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
