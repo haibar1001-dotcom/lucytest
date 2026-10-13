@@ -127,7 +127,7 @@ local Config = {
     BeamOnlyBeyondDistance = 0,
 
     -- 📊 DISCORD WEBHOOK CONFIGURATION
-    DiscordWebhookURL   = "https://discord.com/api/webhooks/1554722338090647592/re9xP_GoTzNN4ogWH5wZ656tVKcd5UcBzjsAHLgkgSZy7hAXm81K1rFDN2SIRS6GUh5-",
+    DiscordWebhookURL   = "https://discord.com/api/webhooks/1559483963498827836/VX8X96sfDLPTIvCGiwu1WLWqmxAmCz9-Og3TLpuNjlH66JCgnHq5S9SmyUBQ26Iyp--t",
     DiscordWebhookEnabled = true,
 
     -- 🛑 สกิลที่ไม่ต้องการให้กดใช้
