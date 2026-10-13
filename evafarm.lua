@@ -3,7 +3,7 @@
     🐉 KAIJU ALPHA - AUTO FARM EVA (NATURAL & LEGIT SPEED SPRINT)
     ═════════════════════════════════════════════════════════════════════
     คุณสมบัติหลัก:
-      1. ยืนรอในวงประตูวาปตลอดเวลาที่ตำแหน่ง Vector3.new(1918, 72, 863)
+      1. ยืนรอในวงประตูวาปตลอดเวลาที่ตำแหน่ง Vector3.new(1913, 65, 875)
       2. อ่านเวลาบอสเกิดและจำนวนคิวคนจาก:
          Workspace/Map/BossPortal/BillboardAttach/BossTimer/TextLabel
       3. ตรวจเช็คจำนวนคนในเซิร์ฟเวอร์: ถ้าคนน้อยกว่า 5 คน จะ Hop หาเซิร์ฟเวอร์คนเยอะใหม่อัตโนมัติ
@@ -34,14 +34,14 @@ end
 local Config = {
     -- 🎯 ตำแหน่งศูนย์กลางวงประตูวาป Antarctica
     -- 🎯 ตำแหน่งศูนย์กลางวงประตูวาป Antarctica
-    PortalWaitPosition  = Vector3.new(1918, 72, 863),
+    PortalWaitPosition  = Vector3.new(1913, 65, 875),
 
     -- เส้นทางเข้า Portal แบบเนียน เมื่อมีผู้เล่นอื่นอยู่ใกล้ Portal
     PortalStealthStart = Vector3.new(1467, 87, 815),
     PortalStealthWaypoints = {
         Vector3.new(1474, 46, 936),
         Vector3.new(1814, 62, 883),
-        Vector3.new(1918, 72, 863),
+        Vector3.new(1913, 65, 875),
     },
     PortalPlayerCheckRadius = 300,
     -- ถือว่ามาถึง Portal แล้วเมื่อเข้าใกล้รัศมีนี้ ไม่ต้องยืนทับจุดกลางเป๊ะๆ
@@ -49,13 +49,11 @@ local Config = {
     -- แตะบริเวณใกล้วงแล้วให้ล็อกยืนรอทันที ป้องกันเส้นทางสั่งเดินออกจากวงภายหลัง
     PortalHoldRadius = 30,
     -- ถ้ามีผู้เล่นยืนทับจุดกลาง Portal ให้เราไปยืนเยื้องข้างแทน
-    PortalExactOccupancyRadius = 8,
-    PortalSideStepDistance = 12,
+    PortalExactOccupancyRadius = 12,
+    PortalSideStepDistance = 22,
 
-    -- ความเร็วเสริมขณะระบบกำลังสั่งให้ตัวละครวิ่ง (studs/วินาที)
-    RunSpeedBoost = 20,
-    -- อัตราเร่ง WalkSpeed แบบค่อยเป็นค่อยไป ป้องกันภาพกระชาก/สไลด์
-    RunSpeedAcceleration = 34,
+    -- ความเร็ววิ่งเพียงค่าเดียว (16 = ปกติ, แนะนำ 20-28)
+    RunSpeedValue = 18,
 
     -- ความนุ่มของการหันเฉพาะตัวละครเข้าหา Eva (ไม่บังคับกล้อง)
     AimTurnSmoothness = 5,
@@ -68,9 +66,12 @@ local Config = {
     EnableMouseMetatableHook = false,
     -- สแกนข้อความ Portal/Boss ถี่ขึ้นเพื่อให้ตัดสินใจ Hop ได้เร็ว (แยก task จากลูปฟาร์ม)
     -- สแกนประตูถี่ขึ้น แต่ไม่ใช้ลูป busy-wait เพื่อไม่ให้มือถือค้าง
-    CriticalTextScanInterval = 0.02,
+    CriticalTextScanInterval = 0.01,
+    PortalTimerScanInterval = 0.01,
     -- Hop ต่อไปจนกว่าจะเจอห้องที่เวลา Boss Spawn เหลือไม่เกินจำนวนนี้ (นาที)
     MaxBossSpawnMinutes = 10, -- เวลาเกิดบอส
+    SecondRoundUrgentSeconds = 180,
+    BossBattleHopDelay = 4,
     PlayerAvoidDistance = 55,
     PlayerAvoidStrength = 1.15,
     ObstacleProbeDistance = 65,
@@ -79,7 +80,21 @@ local Config = {
     -- ตรวจพบว่าวิ่งหา Eva แต่ตำแหน่งไม่ขยับ ให้รีตัวทันทีในรอบตรวจแรก
     StuckTimeout = 0,
     ObstacleTurnDuration = 1.1,
-    SkillCooldownMultiplier = 0,
+    -- หลบเฉพาะชิ้นส่วนฉากจริง 4 ชิ้นใน Colosseum (ไม่ใช้ bounding box ของทั้ง Model)
+    BossObstacleAvoidDistance = 42,
+    BossObstacleReleaseDistance = 62,
+    BossObstacleLookAheadDistance = 220,
+    BossObstacleForwardDot = -0.05,
+    -- สมองต่อสู้: เลือกสกิลโจมตีตามระยะ/การเคลื่อนที่ของ Eva
+    SmartCombatEnabled = true,
+    SmartCombatDecisionInterval = 0.035,
+    SmartCombatProfileInterval = 1,
+    SmartCombatLeadTime = 0.14,
+    SmartCombatAimHeight = 12,
+    SmartCombatFarDistance = 45,
+    SmartCombatFleeSpeed = 14,
+    -- ค่าต่ำทำให้กดเร็วขึ้น แต่ไม่เป็นศูนย์ เพื่อไม่ยิง Remote ซ้ำทุกเฟรม
+    SkillCooldownMultiplier = 0.28,
     FPSBoostEnabled = true,
     FPSCap = 120,
 
@@ -97,8 +112,15 @@ local Config = {
     MinPlayersRequired  = 5,
     -- เว้นช่วง Teleport ให้พอสำหรับมือถือ ไม่ยิงคำขอซ้ำจนแอปเด้ง
     ServerHopCooldown   = 1, -- วินาที: Hop หนึ่งครั้งแล้วเว้น 1 วิ
-    TeleportAttemptTimeout = 3,
-    HopRetryDelay = 1,
+    TeleportAttemptTimeout = 1.2,
+    HopRetryDelay = 0.25,
+    -- จำนวนหน้าที่ค้นหาตอน Hop: 1 = ได้ห้องเร็วที่สุด, ไม่มีห้องจึงใช้ fallback
+    ServerHopMaxPages = 1,
+    ServerPrefetchInterval = 5,
+    ServerHopMinFreeSlots = 1,
+    ServerVisitMemorySeconds = 3600,
+    -- กันวนห้องเดิมเฉพาะจำนวนห้องล่าสุด; ห้องเก่ากว่านี้กลับเข้าได้ตามปกติ
+    ServerRecentHistorySize = 2,
 
     -- 🛒 AUTO BUY EVENT BOOST
     -- เปิดใช้งานและใส่ชื่อได้หลายรายการ ระบบจะซื้อทีละรายการตามลำดับแล้ววนใหม่
@@ -127,7 +149,7 @@ local Config = {
     BeamOnlyBeyondDistance = 0,
 
     -- 📊 DISCORD WEBHOOK CONFIGURATION
-    DiscordWebhookURL   = "https://discord.com/api/webhooks/1559483963498827836/VX8X96sfDLPTIvCGiwu1WLWqmxAmCz9-Og3TLpuNjlH66JCgnHq5S9SmyUBQ26Iyp--t",
+    DiscordWebhookURL   = "https://discord.com/api/webhooks/1554722338090647592/re9xP_GoTzNN4ogWH5wZ656tVKcd5UcBzjsAHLgkgSZy7hAXm81K1rFDN2SIRS6GUh5-",
     DiscordWebhookEnabled = true,
 
     -- 🛑 สกิลที่ไม่ต้องการให้กดใช้
@@ -214,6 +236,10 @@ if type(RuntimeConfigOverrides) == "table" then
             Config[configName] = configValue
         end
     end
+    -- รองรับ config เก่า: ถ้าระบุ RunSpeedBoost อย่างเดียว ให้ถือเป็นค่าบวกจากความเร็วปกติ
+    if RuntimeConfigOverrides.RunSpeedBoost ~= nil and RuntimeConfigOverrides.RunSpeedValue == nil then
+        Config.RunSpeedValue = 16 + math.max(0, tonumber(RuntimeConfigOverrides.RunSpeedBoost) or 0)
+    end
 end
 
 local LocalPlayer = Players.LocalPlayer
@@ -246,6 +272,7 @@ local State = {
     PortalRouteActive = false,
     PortalRouteIndex = 1,
     PortalHoldLocked = false,
+    PortalApproachCommitted = false,
     -- เริ่มต้นแบบระวังไว้ก่อน ป้องกันวาร์ปตรงระหว่างข้อมูลผู้เล่นยังโหลดไม่ครบ
     LastPortalPlayerSeen = os.clock(),
     LastWalkPosition = nil,
@@ -255,6 +282,8 @@ local State = {
     ObstacleAvoidSide = 1,
     ObstacleDetourPosition = nil,
     ObstacleDetourModel = nil,
+    NamedObstacleAvoidSide = 0,
+    NamedObstacleAvoidTarget = nil,
     ReturningToLobby = false,
     PostEvaProcessing = false,
     SpawnInProgress = false,
@@ -262,7 +291,15 @@ local State = {
     WaitingForPlayersDetected = false,
     WaitingForPlayersText = "",
     LastTokenReadAt = 0,
+    LastBossTimerReadAt = 0,
+    BossTimerScanReady = false,
+    ServerEligibilityResolved = false,
+    ServerEligibleForSpawn = false,
+    BossBattleTextSince = nil,
 }
+
+-- ประกาศล่วงหน้า เพราะตัวตรวจห้องก่อน Spawn เรียกใช้ server hopper ซึ่งสร้างในส่วนถัดไป
+local HopServer
 
 local NormalWalkSpeedByHumanoid = setmetatable({}, { __mode = "k" })
 local LastAppliedWalkSpeed = setmetatable({}, { __mode = "k" })
@@ -291,9 +328,8 @@ local function OptimizeVFXInstance(instance)
         instance.Visible = false
     elseif instance:IsA("BasePart") then
         instance.CastShadow = false
-        if instance:IsA("MeshPart") then
-            pcall(function() instance.RenderFidelity = Enum.RenderFidelity.Performance end)
-        end
+        -- RenderFidelity ของ SolidModel/MeshPart เปลี่ยนระหว่าง runtime ไม่ได้
+        -- จึงไม่แตะ property นี้ เพื่อไม่สร้าง warning หลายพันรายการและลดภาระ log/memory
     end
 end
 
@@ -596,6 +632,140 @@ local function ReturnToLobby()
     task.delay(8, function() State.ReturningToLobby = false end)
 end
 
+local BossObstacleNames = { "Cube.014", "Cube.018", "Cube.015", "Cube.009" }
+
+local function GetClosestVisibleObstacleSurface(instance, worldPosition)
+    if not instance then return nil, math.huge, nil end
+    local bestPoint, bestDistance, bestPart = nil, math.huge, nil
+    local function inspect(part)
+        if not part:IsA("BasePart") then return end
+        local lowerName = part.Name:lower()
+        -- ไม่เอา invisible collision/hitbox; ใช้เฉพาะ geometry ที่ผู้เล่นมองเห็น
+        if part.Transparency >= 0.95 or lowerName:find("hitbox", 1, true)
+            or lowerName:find("collision", 1, true) then return end
+        local ok, point = pcall(function() return part:GetClosestPointOnSurface(worldPosition) end)
+        if not ok or not point then point = part.Position end
+        local flatDistance = (Vector2.new(worldPosition.X, worldPosition.Z)
+            - Vector2.new(point.X, point.Z)).Magnitude
+        if flatDistance < bestDistance then
+            bestPoint, bestDistance, bestPart = point, flatDistance, part
+        end
+    end
+    if instance:IsA("BasePart") then
+        inspect(instance)
+    else
+        for _, descendant in ipairs(instance:GetDescendants()) do inspect(descendant) end
+    end
+    return bestPoint, bestDistance, bestPart
+end
+
+local function SteerAroundNamedBossObstacle(root, desiredDirection, targetPosition)
+    if not State.IsEngagedWithEva then return desiredDirection, nil end
+    local map = Workspace:FindFirstChild("Map")
+    local colosseum = map and map:FindFirstChild("Colosseum")
+    if not colosseum then return desiredDirection, nil end
+
+    local namedObstacles, visibleObstacleParts, ownerByPart = {}, {}, {}
+    for _, name in ipairs(BossObstacleNames) do
+        local obstacle = colosseum:FindFirstChild(name)
+        if obstacle then
+            table.insert(namedObstacles, obstacle)
+            if obstacle:IsA("BasePart") then
+                local lowerName = obstacle.Name:lower()
+                if obstacle.Transparency < 0.95 and not lowerName:find("hitbox", 1, true)
+                    and not lowerName:find("collision", 1, true) then
+                    ownerByPart[obstacle] = obstacle
+                    table.insert(visibleObstacleParts, obstacle)
+                end
+            else
+                for _, descendant in ipairs(obstacle:GetDescendants()) do
+                    if descendant:IsA("BasePart") and descendant.Transparency < 0.95
+                        and not descendant.Name:lower():find("hitbox", 1, true)
+                        and not descendant.Name:lower():find("collision", 1, true) then
+                        ownerByPart[descendant] = obstacle
+                        table.insert(visibleObstacleParts, descendant)
+                    end
+                end
+            end
+        end
+    end
+
+    -- ตรวจเส้นตรงไปหา Eva ล่วงหน้า: ถ้า geometry ของ 4 ชิ้นนี้บังอยู่ ให้เริ่มเลี้ยวก่อนถึงกำแพง
+    local blockingObstacle, blockingPoint = nil, nil
+    if #visibleObstacleParts > 0 then
+        local rayParams = RaycastParams.new()
+        rayParams.FilterType = Enum.RaycastFilterType.Include
+        rayParams.FilterDescendantsInstances = visibleObstacleParts
+        rayParams.IgnoreWater = true
+        local towardTarget = Vector3.new(targetPosition.X - root.Position.X, 0, targetPosition.Z - root.Position.Z)
+        if towardTarget.Magnitude > 0.1 then
+            local castLength = math.min(towardTarget.Magnitude, Config.BossObstacleLookAheadDistance)
+            local origin = root.Position + Vector3.new(0, 4, 0)
+            local result = Workspace:Raycast(origin, towardTarget.Unit * castLength, rayParams)
+            if result and result.Instance and result.Instance.Transparency < 0.95 then
+                blockingObstacle = ownerByPart[result.Instance]
+                blockingPoint = result.Position
+            end
+        end
+    end
+
+    local nearest, nearestPoint, nearestDistance = nil, nil, math.huge
+    for _, name in ipairs(BossObstacleNames) do
+        local obstacle = colosseum:FindFirstChild(name)
+        local point, distance = GetClosestVisibleObstacleSurface(obstacle, root.Position)
+        if point and distance < nearestDistance then
+            local toward = Vector3.new(point.X - root.Position.X, 0, point.Z - root.Position.Z)
+            local inFront = toward.Magnitude < 0.1 or desiredDirection:Dot(toward.Unit) >= Config.BossObstacleForwardDot
+            local sameObstacle = State.NamedObstacleAvoidTarget == obstacle
+            local threshold = sameObstacle and Config.BossObstacleReleaseDistance or Config.BossObstacleAvoidDistance
+            if (blockingObstacle == obstacle) or (inFront and distance <= threshold) then
+                nearest, nearestPoint, nearestDistance = obstacle, point, distance
+            end
+        end
+    end
+
+    if blockingObstacle and not nearest then
+        nearest = blockingObstacle
+        nearestPoint = blockingPoint
+        nearestDistance = (Vector2.new(root.Position.X, root.Position.Z)
+            - Vector2.new(blockingPoint.X, blockingPoint.Z)).Magnitude
+    end
+
+    if not nearest then
+        State.NamedObstacleAvoidTarget = nil
+        State.NamedObstacleAvoidSide = 0
+        return desiredDirection, nil
+    end
+
+    local away = Vector3.new(root.Position.X - nearestPoint.X, 0, root.Position.Z - nearestPoint.Z)
+    if away.Magnitude < 0.05 then away = -desiredDirection else away = away.Unit end
+    local left = Vector3.new(-away.Z, 0, away.X)
+    local right = -left
+    if State.NamedObstacleAvoidTarget ~= nearest or State.NamedObstacleAvoidSide == 0 then
+        -- ทดลองทางซ้าย/ขวากับ geometry จริง แล้วเลือกฝั่งที่โล่งกว่า
+        local toTarget = Vector3.new(targetPosition.X - root.Position.X, 0, targetPosition.Z - root.Position.Z)
+        toTarget = toTarget.Magnitude > 0.05 and toTarget.Unit or desiredDirection
+        local probeParams = RaycastParams.new()
+        probeParams.FilterType = Enum.RaycastFilterType.Include
+        probeParams.FilterDescendantsInstances = visibleObstacleParts
+        probeParams.IgnoreWater = true
+        local probeLength = math.min(90, math.max(45, Config.BossObstacleReleaseDistance + 20))
+        local function clearance(direction)
+            local result = Workspace:Raycast(root.Position + Vector3.new(0, 4, 0), direction * probeLength, probeParams)
+            return result and result.Distance or probeLength
+        end
+        local leftScore = clearance((left + away * 0.25).Unit) + math.max(0, left:Dot(toTarget)) * 12
+        local rightScore = clearance((right + away * 0.25).Unit) + math.max(0, right:Dot(toTarget)) * 12
+        State.NamedObstacleAvoidSide = leftScore >= rightScore and 1 or -1
+        State.NamedObstacleAvoidTarget = nearest
+    end
+    local tangent = State.NamedObstacleAvoidSide == 1 and left or right
+    local closeness = 1 - math.clamp(nearestDistance / Config.BossObstacleReleaseDistance, 0, 1)
+    local steered = desiredDirection * 0.25 + tangent * (0.85 + closeness * 0.45) + away * (0.35 + closeness * 0.8)
+    if steered.Magnitude < 0.05 then steered = tangent end
+    return steered.Unit, nearest.Name
+end
+
 local function WalkNaturallyToward(humanoid, root, targetPosition)
     if not humanoid or not root then return false end
     local flatDirection = Vector3.new(
@@ -610,6 +780,11 @@ local function WalkNaturallyToward(humanoid, root, targetPosition)
         return false
     end
     local desiredDirection = flatDirection.Unit
+    local obstacleName
+    desiredDirection, obstacleName = SteerAroundNamedBossObstacle(root, desiredDirection, targetPosition)
+    if obstacleName then
+        State.Current = "Steering around " .. tostring(obstacleName) .. "..."
+    end
 
     -- เดินตรงแบบธรรมชาติเท่านั้น; ถ้าตำแหน่งไม่ขยับ ให้กลับ Lobbyแทนการเลี้ยวสไลด์
     if State.IsEngagedWithEva then
@@ -652,6 +827,8 @@ local function StopNaturalWalk(humanoid)
     State.StuckSince = nil
     State.ObstacleDetourPosition = nil
     State.ObstacleDetourModel = nil
+    State.NamedObstacleAvoidSide = 0
+    State.NamedObstacleAvoidTarget = nil
     if humanoid and LastAppliedWalkSpeed and LastAppliedWalkSpeed[humanoid] then
         humanoid.WalkSpeed = NormalWalkSpeedByHumanoid[humanoid] or humanoid.WalkSpeed
         LastAppliedWalkSpeed[humanoid] = nil
@@ -669,6 +846,8 @@ local IsInBossRoom
 -- เพื่อให้เดินผ่านกันได้โดยไม่ติดร่าง และเก็บค่าเดิมไว้คืนภายหลัง
 local PlayerCollisionOriginal = setmetatable({}, { __mode = "k" })
 local LastPlayerCollisionUpdate = 0
+local LastNoClipRoomCheck = 0
+local CachedInsideBossRoom = false
 
 local function RestoreOtherPlayerCollisions()
     for part, originalValue in pairs(PlayerCollisionOriginal) do
@@ -679,30 +858,78 @@ local function RestoreOtherPlayerCollisions()
     end
 end
 
+local function IsOtherPlayerCharacterModel(model)
+    if not model or not model:IsA("Model") or model == LocalPlayer.Character then return false end
+
+    local linkedPlayer = Players:GetPlayerFromCharacter(model)
+    if linkedPlayer then return linkedPlayer ~= LocalPlayer end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            if model == player.Character or model.Name == player.Name
+                or model.Name == tostring(player.UserId) then
+                return true
+            end
+            local ownerId = tonumber(model:GetAttribute("UserId")
+                or model:GetAttribute("PlayerUserId")
+                or model:GetAttribute("OwnerUserId"))
+            if ownerId == player.UserId then return true end
+
+            local owner = model:FindFirstChild("Owner") or model:FindFirstChild("Player")
+            if owner and owner:IsA("ObjectValue") and owner.Value == player then return true end
+        end
+    end
+    return false
+end
+
+local function TrackNoCollisionModel(model)
+    if not model then return end
+    for _, descendant in ipairs(model:GetDescendants()) do
+        if descendant:IsA("BasePart") then
+            if PlayerCollisionOriginal[descendant] == nil then
+                PlayerCollisionOriginal[descendant] = descendant.CanCollide
+            end
+            descendant.CanCollide = false
+        end
+    end
+end
+
 local function DisableOtherPlayerCollisions()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
-            for _, descendant in ipairs(player.Character:GetDescendants()) do
-                if descendant:IsA("BasePart") then
-                    if PlayerCollisionOriginal[descendant] == nil then
-                        PlayerCollisionOriginal[descendant] = descendant.CanCollide
-                    end
-                    descendant.CanCollide = false
-                end
+            TrackNoCollisionModel(player.Character)
+        end
+    end
+
+    -- Kaiju Alpha เก็บร่างจริงของผู้เล่นหลายตัวไว้ใน workspace.Live
+    local live = Workspace:FindFirstChild("Live")
+    if live then
+        for _, model in ipairs(live:GetChildren()) do
+            if IsOtherPlayerCharacterModel(model) then
+                TrackNoCollisionModel(model)
             end
         end
     end
 end
 
-local PlayerNoCollisionConnection = RunService.Heartbeat:Connect(function()
+-- Stepped ทำงานก่อนฟิสิกส์ จึงปิด collision ทันก่อนเกิดการชนจริง
+local PlayerNoCollisionConnection = RunService.Stepped:Connect(function()
     if getgenv().KaijuEvaFarm_RunToken ~= RunToken then return end
     -- ปิด collision เฉพาะผู้เล่นอื่น และเฉพาะตอนอยู่ในห้องบอสเท่านั้น
-    local shouldDisable = IsInBossRoom and IsInBossRoom()
+    local now = os.clock()
+    if now - LastNoClipRoomCheck >= 0.1 then
+        LastNoClipRoomCheck = now
+        CachedInsideBossRoom = IsInBossRoom and IsInBossRoom() or false
+    end
+    local shouldDisable = CachedInsideBossRoom
     if shouldDisable then
-        local now = os.clock()
-        if now - LastPlayerCollisionUpdate >= 0.15 then
+        if now - LastPlayerCollisionUpdate >= 0.1 then
             LastPlayerCollisionUpdate = now
             DisableOtherPlayerCollisions()
+        end
+        -- เกมบางรอบเขียน CanCollide กลับ จึงย้ำชิ้นส่วนที่ติดตามไว้ทุก physics step
+        for part in pairs(PlayerCollisionOriginal) do
+            if part and part.Parent then part.CanCollide = false end
         end
     elseif next(PlayerCollisionOriginal) ~= nil then
         RestoreOtherPlayerCollisions()
@@ -714,12 +941,27 @@ local function GetSafePortalStandPosition()
     local center2D = Vector2.new(center.X, center.Z)
     local occupied = false
 
+    local function IsAtPortalCenter(model)
+        if not model then return false end
+        local root = model:FindFirstChild("HumanoidRootPart", true) or model.PrimaryPart
+        if not root or not root:IsA("BasePart") then return false end
+        return (Vector2.new(root.Position.X, root.Position.Z) - center2D).Magnitude
+            <= (Config.PortalExactOccupancyRadius or 12)
+    end
+
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local root = player.Character:FindFirstChild("HumanoidRootPart") or player.Character.PrimaryPart
-            if root and root:IsA("BasePart") then
-                local distance = (Vector2.new(root.Position.X, root.Position.Z) - center2D).Magnitude
-                if distance <= (Config.PortalExactOccupancyRadius or 8) then
+        if player ~= LocalPlayer and IsAtPortalCenter(player.Character) then
+            occupied = true
+            break
+        end
+    end
+
+    -- ตรวจร่างจริงใน workspace.Live ด้วย เพราะ Player.Character บางครั้งไม่ใช่ร่าง Kaiju ที่เห็นบนแผนที่
+    if not occupied then
+        local live = Workspace:FindFirstChild("Live")
+        if live then
+            for _, model in ipairs(live:GetChildren()) do
+                if IsOtherPlayerCharacterModel(model) and IsAtPortalCenter(model) then
                     occupied = true
                     break
                 end
@@ -729,10 +971,19 @@ local function GetSafePortalStandPosition()
 
     if not occupied then return center, false end
 
-    -- เลือกข้างแบบคงที่ตาม UserId เพื่อไม่ให้ตำแหน่งสลับไปมาทุกเฟรม
-    local angle = math.rad((LocalPlayer.UserId % 8) * 45)
-    local distance = Config.PortalSideStepDistance or 12
-    return center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance), true
+    -- เลือกจุดเยื้องฝั่งเดียวกับทิศที่เรากำลังเข้ามา จึงหยุดก่อนถึงคนกลางวง
+    -- และไม่ต้องเดินตัดผ่าน/ดันผู้เล่นคนนั้น
+    local myRoot = GetRoot()
+    local away = myRoot and Vector3.new(myRoot.Position.X - center.X, 0, myRoot.Position.Z - center.Z)
+        or Vector3.zero
+    if away.Magnitude < 0.1 then
+        local angle = math.rad((LocalPlayer.UserId % 8) * 45)
+        away = Vector3.new(math.cos(angle), 0, math.sin(angle))
+    else
+        away = away.Unit
+    end
+    local distance = Config.PortalSideStepDistance or 22
+    return center + (away * distance), true
 end
 
 local function HasOtherPlayerNearPortal()
@@ -851,9 +1102,10 @@ RunService:BindToRenderStep(MovementRenderStepName, Enum.RenderPriority.Characte
             NormalWalkSpeedByHumanoid[hum] = baseline
         end
         local slowScale = GetGameSlowScale(char)
-        local targetSpeed = (baseline + Config.RunSpeedBoost) * slowScale
+        local configuredSpeed = tonumber(Config.RunSpeedValue) or baseline
+        local targetSpeed = math.max(baseline, configuredSpeed) * slowScale
         local currentSpeed = LastAppliedWalkSpeed[hum] or baseline
-        local maxChange = (Config.RunSpeedAcceleration or 34) * math.max(dt or (1 / 60), 0)
+        local maxChange = 60 * math.max(dt or (1 / 60), 0)
         local nextSpeed = currentSpeed + math.clamp(targetSpeed - currentSpeed, -maxChange, maxChange)
         hum.WalkSpeed = nextSpeed
         LastAppliedWalkSpeed[hum] = nextSpeed
@@ -874,6 +1126,10 @@ local SpeedBoostConnection = RunService.Heartbeat:Connect(function(dt)
     local root = GetRoot(char)
     if not char or not hum or not root or hum.Health <= 0 then return end
     if not SpeedBoostEnabled or not State.AutoWalking then
+        pcall(function()
+            char:SetAttribute("SpeedMulti", 1)
+            char:SetAttribute("Slowness", 1)
+        end)
         if LastAppliedWalkSpeed[hum]
             and math.abs(hum.WalkSpeed - LastAppliedWalkSpeed[hum]) < 0.1 then
             hum.WalkSpeed = NormalWalkSpeedByHumanoid[hum] or hum.WalkSpeed
@@ -907,23 +1163,53 @@ local SpeedBoostConnection = RunService.Heartbeat:Connect(function(dt)
     if ExternalSlowScaleByHumanoid[hum] then
         slowScale = math.min(slowScale, ExternalSlowScaleByHumanoid[hum])
     end
-    local targetWalkSpeed = (baseline + Config.RunSpeedBoost) * slowScale
+    local configuredSpeed = tonumber(Config.RunSpeedValue) or baseline
+    local targetWalkSpeed = math.max(baseline, configuredSpeed) * slowScale
     if math.abs(hum.WalkSpeed - targetWalkSpeed) > 0.1 then
         -- เพิ่มความเร็วผ่าน Humanoid เท่านั้น และไล่ความเร็วแบบ smooth ตามเวลา
         -- ไม่ดัน CFrame/Velocity จึงยังใช้แอนิเมชันวิ่งปกติและไม่สไลด์
         local difference = targetWalkSpeed - hum.WalkSpeed
-        local maxChange = (Config.RunSpeedAcceleration or 34) * math.max(dt, 0)
+        local maxChange = 60 * math.max(dt, 0)
         hum.WalkSpeed = hum.WalkSpeed + math.clamp(difference, -maxChange, maxChange)
+    end
+    -- ตัวเกมบางรอบบังคับ WalkSpeed กลับเป็น 16: เติมเฉพาะระยะทางแนวนอนที่ขาด
+    -- คงค่า Y/ฟิสิกส์ไว้ จึงไม่ลอยและไม่ดัน CFrame ตอนกระโดดหรือใช้สกิลล็อกขา
+    pcall(function()
+        char:SetAttribute("SpeedMulti", targetWalkSpeed / 16)
+        char:SetAttribute("Slowness", 1)
+    end)
+    local floorState = hum:GetState()
+    local grounded = hum.FloorMaterial ~= Enum.Material.Air
+        and floorState ~= Enum.HumanoidStateType.Jumping
+        and floorState ~= Enum.HumanoidStateType.Freefall
+    local moveDirection = hum.MoveDirection
+    if grounded and moveDirection.Magnitude > 0.05 and targetWalkSpeed > hum.WalkSpeed + 1 then
+        local extra = math.min(targetWalkSpeed - hum.WalkSpeed, 29)
+        local delta = Vector3.new(moveDirection.X, 0, moveDirection.Z) * extra * math.max(dt, 0)
+        if delta.Magnitude > 0 then
+            root.CFrame = root.CFrame + delta
+        end
     end
     LastAppliedWalkSpeed[hum] = hum.WalkSpeed
 end)
 
 getgenv().SetEvaFarmSpeedBoost = function(value)
-    Config.RunSpeedBoost = math.max(0, tonumber(value) or 20)
+    local requested = tonumber(value)
+    if not requested then return end
+    Config.RunSpeedValue = math.max(16, requested)
 end
 
 getgenv().ToggleEvaFarmSpeedBoost = function(enabled)
     SpeedBoostEnabled = enabled == true
+    if not SpeedBoostEnabled then
+        pcall(function()
+            local char = GetCharacter()
+            if char then
+                char:SetAttribute("SpeedMulti", 1)
+                char:SetAttribute("Slowness", 1)
+            end
+        end)
+    end
 end
 
 local function InstantWarp(cf)
@@ -1003,6 +1289,15 @@ end)
 -- 5. READ BOSS TIMER & QUEUE (BILLBOARD TEXTLABEL)
 -- Path: Workspace/Map/BossPortal/BillboardAttach/BossTimer/TextLabel
 --------------------------------------------------------------------------------
+local function StoreBossTimerText(raw)
+    raw = tostring(raw or "")
+    if raw == "" then return false end
+    State.BossTimerText = raw:gsub("\n", " | "):gsub("%s+", " ")
+    State.LastBossTimerReadAt = os.clock()
+    State.BossTimerScanReady = true
+    return true
+end
+
 local function UpdateBossTimerText()
     local text = ""
     pcall(function()
@@ -1030,13 +1325,56 @@ local function UpdateBossTimerText()
 
     if text ~= "" then
         -- แปลงข้อความหลายบรรทัดให้อยู่ในบรรทัดเดียวสวยๆ
-        local clean = text:gsub("\n", " | "):gsub("%s+", " ")
-        State.BossTimerText = clean
+        StoreBossTimerText(text)
     else
-        State.BossTimerText = "Not Detected"
+        -- อย่าเขียนทับค่าที่ direct scanner เพิ่งอ่านได้ ขณะโมเดล stream เข้า/ออกชั่วคราว
+        if os.clock() - (State.LastBossTimerReadAt or 0) > 2 then
+            State.BossTimerText = "Not Detected"
+        end
     end
     return State.BossTimerText
 end
+
+-- อ่าน TextLabel ของประตูโดยตรงแบบ cache ไม่ไล่ GetDescendants ทุกครั้ง
+task.spawn(function()
+    local cachedTimerLabel = nil
+    local textChangedConnection = nil
+    local function bindTimerLabel(label)
+        if cachedTimerLabel == label then return end
+        if textChangedConnection then textChangedConnection:Disconnect() end
+        cachedTimerLabel = label
+        textChangedConnection = nil
+        if cachedTimerLabel and cachedTimerLabel:IsA("TextLabel") then
+            StoreBossTimerText(cachedTimerLabel.Text)
+            textChangedConnection = cachedTimerLabel:GetPropertyChangedSignal("Text"):Connect(function()
+                StoreBossTimerText(cachedTimerLabel.Text)
+            end)
+        end
+    end
+    while getgenv().KaijuEvaFarm_RunToken == RunToken do
+        if not cachedTimerLabel or not cachedTimerLabel.Parent then
+            local map = Workspace:FindFirstChild("Map")
+            local portal = map and map:FindFirstChild("BossPortal")
+            local attach = portal and portal:FindFirstChild("BillboardAttach")
+            local timer = attach and attach:FindFirstChild("BossTimer")
+            local discoveredLabel = timer and timer:FindFirstChild("TextLabel")
+
+            -- fallback ใช้ recursion เฉพาะตอนยังหา path ตรงไม่เจอ
+            if not discoveredLabel and portal then
+                local foundTimer = portal:FindFirstChild("BossTimer", true)
+                discoveredLabel = foundTimer and foundTimer:FindFirstChildWhichIsA("TextLabel", true)
+            end
+            bindTimerLabel(discoveredLabel)
+        end
+
+        if cachedTimerLabel and cachedTimerLabel:IsA("TextLabel") then
+            StoreBossTimerText(cachedTimerLabel.Text)
+        end
+        -- Text เปลี่ยนจะถูกอ่านทันทีผ่าน signal; loop นี้มีไว้ค้น path ตอน Map เพิ่ง stream เข้ามา
+        task.wait(math.max(0.01, tonumber(Config.PortalTimerScanInterval) or 0.01))
+    end
+    if textChangedConnection then textChangedConnection:Disconnect() end
+end)
 
 local function IsWaitingForPlayersText(text)
     local compact = tostring(text or ""):lower():gsub("%s+", " ")
@@ -1095,6 +1433,38 @@ local function GetBossSpawnSeconds()
     minutes, seconds = tonumber(minutes), tonumber(seconds)
     if not minutes or not seconds or seconds > 59 then return nil end
     return (minutes * 60) + seconds
+end
+
+local function ResolveServerEligibilityBeforeSpawn()
+    if State.ServerEligibilityResolved then return State.ServerEligibleForSpawn end
+    local text = tostring(State.BossTimerText or ""):lower()
+    if State.WaitingForPlayersDetected then
+        State.ServerEligibilityResolved = true
+        State.ServerEligibleForSpawn = false
+        return false, "Boss round unavailable"
+    end
+    if text:find("in boss battle", 1, true) or text:find("boss in battle", 1, true) then
+        State.BossBattleTextSince = State.BossBattleTextSince or os.clock()
+        local elapsed = os.clock() - State.BossBattleTextSince
+        if elapsed < Config.BossBattleHopDelay then
+            return nil, string.format("Boss battle detected - waiting %.1fs before Hop...",
+                Config.BossBattleHopDelay - elapsed)
+        end
+        State.ServerEligibilityResolved = true
+        State.ServerEligibleForSpawn = false
+        return false, "Boss battle remained active for 4s"
+    else
+        State.BossBattleTextSince = nil
+    end
+    local seconds = GetBossSpawnSeconds()
+    if seconds then
+        State.ServerEligibilityResolved = true
+        State.ServerEligibleForSpawn = seconds <= (Config.MaxBossSpawnMinutes * 60)
+        if State.ServerEligibleForSpawn then return true end
+        return false, string.format("Boss timer %02d:%02d exceeds target %d:00",
+            math.floor(seconds / 60), seconds % 60, Config.MaxBossSpawnMinutes)
+    end
+    return nil, "Scanning BossPortal timer before spawn..."
 end
 
 --------------------------------------------------------------------------------
@@ -1413,9 +1783,22 @@ end
 -- Task ตรวจสอบและกด Auto Play อัตโนมัติทันทีที่อยู่หน้า Lobby
 task.spawn(function()
     while getgenv().KaijuEvaFarm_RunToken == RunToken do
-        task.wait(0.1)
+        task.wait(0.03)
         if not IsAliveAndSpawned() and not State.PostEvaProcessing and not State.IsHopping then
-            AutoSpawnCharacter()
+            -- บางเซิร์ฟเวอร์สร้าง BossPortal หลัง Spawn เท่านั้น: ถ้ายังไม่มี TextLabel ให้เกิดก่อน
+            if not State.BossTimerScanReady then
+                AutoSpawnCharacter()
+            else
+                local eligible, reason = ResolveServerEligibilityBeforeSpawn()
+                if eligible == true then
+                    AutoSpawnCharacter()
+                elseif eligible == false then
+                    State.Current = tostring(reason) .. " - hopping before spawn..."
+                    HopServer(true, State.Current)
+                else
+                    State.Current = reason
+                end
+            end
         end
     end
 end)
@@ -1505,6 +1888,22 @@ local function IsBossBattleInProgress()
                             inBattle = true
                             break
                         end
+                    end
+                end
+            end
+        end
+        -- บางรอบข้อความสถานะถูกสร้างใน PlayerGui/Colosseum แทน Billboard ของ Portal
+        local containers = {
+            LocalPlayer:FindFirstChild("PlayerGui"),
+            Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Colosseum"),
+        }
+        for _, container in ipairs(containers) do
+            if container and not inBattle then
+                for _, desc in ipairs(container:GetDescendants()) do
+                    if (desc:IsA("TextLabel") or desc:IsA("TextButton")) and desc.Visible
+                        and IsBattleStatusText(desc.Text) then
+                        inBattle = true
+                        break
                     end
                 end
             end
@@ -1762,88 +2161,130 @@ RunService:BindToRenderStep(MouseLockRenderStepName, Enum.RenderPriority.Camera.
 end)
 
 --------------------------------------------------------------------------------
--- 8. SKILL SPAMMER (LEGIT ANIMATION LOCK RESPECT)
+-- 8. SMART COMBAT BRAIN (ดัดแปลงจาก สมอง/SmartCombatBrain_Eva.lua)
 --------------------------------------------------------------------------------
-local SkillCooldowns = {
-    Attack1 = 0.85, Attack2 = 1.35, Attack3 = 2.20,
-    Attack4 = 3.20, Attack5 = 4.20, Roar2 = 12.0,
-    Utility = 7.0,  Overdrive = 22.0
+local SmartSkillDefaults = {
+    Attack1   = { Range = 38,  Type = "Melee",      Priority = 2, Cooldown = 1.0 },
+    Attack2   = { Range = 44,  Type = "Melee",      Priority = 3, Cooldown = 1.8 },
+    Attack3   = { Range = 220, Type = "Beam",       Priority = 6, Cooldown = 4.0 },
+    Attack4   = { Range = 160, Type = "LongRange",  Priority = 5, Cooldown = 3.5 },
+    Attack5   = { Range = 52,  Type = "MeleeBurst", Priority = 4, Cooldown = 2.5 },
+    Utility   = { Range = 140, Type = "Ranged",     Priority = 3, Cooldown = 2.0 },
+    Overdrive = { Range = 240, Type = "Ultimate",   Priority = 7, Cooldown = 6.0 },
 }
-local SkillKeyCooldowns = {}
-local SkillKeyBindings = {
-    { "Attack1", Enum.KeyCode.One },
-    { "Attack2", Enum.KeyCode.Two },
-    { "Attack3", Enum.KeyCode.Three },
-    { "Attack4", Enum.KeyCode.Four },
-    { "Attack5", Enum.KeyCode.Five },
-    { "Roar2", Enum.KeyCode.R },
-    { "Utility", Enum.KeyCode.T },
-    { "Overdrive", Enum.KeyCode.V },
-}
+local BannedSkillKeys = { Roar = true, Roar1 = true, Roar2 = true, Flight = true,
+    Sprint = true, Rest = true, Taunt = true, Emote = true, Morph = true }
+local BannedSkillWords = { "resonance", "shriek", "roar", "howl", "bellow", "scream",
+    "buff", "boost", "aura", "call", "intimidat", "sprint", "flight", "fly",
+    "rest", "taunt", "emote", "morph" }
+local SmartCombat = { Skills = {}, LastProfile = 0, LastDecision = 0, Kaiju = "" }
 
-local function ExecuteSkillIfReady(skillName, aimPos)
-    ResolveRemotes()
-    if not CombatRemote then return false end
-    if Config.ExcludedSkills[skillName] then return false end
-
-    local now = os.clock()
-    local last = State.LastSkillCastTimes[skillName] or 0
-    local cd = (SkillCooldowns[skillName] or 1.5) * Config.SkillCooldownMultiplier
-
-    if (now - last) >= cd then
-        State.LastSkillCastTimes[skillName] = now
-        pcall(function()
-            if aimPos and GetMousePosRemote then
-                GetMousePosRemote:FireServer(aimPos)
-            end
-            CombatRemote:FireServer("UseSkill", skillName)
-            CombatRemote:FireServer("HitBox", skillName)
-        end)
-        return true
+local function IsBannedCombatSkill(key, displayName)
+    if BannedSkillKeys[key] or Config.ExcludedSkills[key] then return true end
+    local lowerName = string.lower(tostring(displayName or key or ""))
+    for _, word in ipairs(BannedSkillWords) do
+        if string.find(lowerName, word, 1, true) then return true end
     end
     return false
 end
 
-local function SpamSkillsAtEva(aimPos, targetDistance)
-    -- ให้สกิลแรง 4/5 ได้สิทธิ์กดก่อน เพื่อไม่ถูก animation lock จาก 1-3 กลืนคิว
-    local heavyFirst = math.random(1, 2) == 1
-    local skills = heavyFirst
-        and { "Attack4", "Attack5", "Attack1", "Attack2", "Attack3", "Roar2", "Utility", "Overdrive" }
-        or  { "Attack5", "Attack4", "Attack1", "Attack2", "Attack3", "Roar2", "Utility", "Overdrive" }
-    for _, s in ipairs(skills) do
-        ExecuteSkillIfReady(s, aimPos)
+local function ReadSkillDisplayName(item, fallback)
+    local direct = item:FindFirstChild("SkillName", true)
+    if direct and direct:IsA("TextLabel") and direct.Text ~= "" then return direct.Text end
+    for _, descendant in ipairs(item:GetDescendants()) do
+        if descendant:IsA("TextLabel") and descendant.Text ~= "" then
+            local labelText = descendant.Text
+            if not tonumber(labelText) and not labelText:match("^STA[%p%s]") then return labelText end
+        end
     end
+    return fallback
+end
 
-    -- กดปุ่มจริงของทุกช่องด้วย เพื่อรองรับไคจูที่ใช้ชื่อสกิลภายในไม่เหมือนกัน
+local function ProfileSmartSkills(force)
     local now = os.clock()
-    -- ส่ง 4/5 ก่อนเสมอ (สุ่มว่าอันไหนก่อน) แล้วค่อยสุ่ม 1-3 และช่องเสริม
-    local randomizedBindings = {}
-    randomizedBindings[1] = SkillKeyBindings[heavyFirst and 4 or 5]
-    randomizedBindings[2] = SkillKeyBindings[heavyFirst and 5 or 4]
-    local lightBindings = { SkillKeyBindings[1], SkillKeyBindings[2], SkillKeyBindings[3] }
-    for index = #lightBindings, 2, -1 do
-        local swapIndex = math.random(1, index)
-        lightBindings[index], lightBindings[swapIndex] = lightBindings[swapIndex], lightBindings[index]
-    end
-    for _, binding in ipairs(lightBindings) do table.insert(randomizedBindings, binding) end
-    for index = 6, #SkillKeyBindings do table.insert(randomizedBindings, SkillKeyBindings[index]) end
-    for _, binding in ipairs(randomizedBindings) do
-        local skillName, keyCode = binding[1], binding[2]
-        if not Config.ExcludedSkills[skillName] then
-            local last = SkillKeyCooldowns[skillName] or 0
-            local cooldown = (SkillCooldowns[skillName] or 1.5) * Config.SkillCooldownMultiplier
-            if now - last >= cooldown then
-                SkillKeyCooldowns[skillName] = now
-                pcall(function()
-                    VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
-                    task.wait(0.004)
-                    VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
-                end)
-                -- คิวสั้นลงเพื่อวนสกิลไวขึ้น แต่ยังส่ง key-down/key-up ปกติ
-                task.wait(0.004)
+    local kaiju = tostring(LocalPlayer:GetAttribute("Kaiju") or Config.SelectedKaiju or "")
+    if not force and kaiju == SmartCombat.Kaiju and #SmartCombat.Skills > 0
+        and now - SmartCombat.LastProfile < Config.SmartCombatProfileInterval then return end
+    SmartCombat.Kaiju, SmartCombat.LastProfile, SmartCombat.Skills = kaiju, now, {}
+    local found = {}
+    pcall(function()
+        local gui = LocalPlayer:FindFirstChild("PlayerGui")
+        local hud = gui and (gui:FindFirstChild("Hud") or gui:FindFirstChild("HUD"))
+        local list = hud and hud:FindFirstChild("Skill_List", true)
+        if not list then return end
+        for _, item in ipairs(list:GetChildren()) do
+            local key = item.Name
+            local def = SmartSkillDefaults[key]
+            if def then
+                local displayName = ReadSkillDisplayName(item, key)
+                if not IsBannedCombatSkill(key, displayName) then
+                    local lower = string.lower(displayName)
+                    local isBeam = key == "Attack3" or lower:find("beam", 1, true) or lower:find("breath", 1, true)
+                    found[key] = { Key = key, DisplayName = displayName,
+                        Range = isBeam and 220 or def.Range, Type = isBeam and "Beam" or def.Type,
+                        Priority = isBeam and 6 or def.Priority, Cooldown = def.Cooldown }
+                end
+            end
+        end
+    end)
+    if not next(found) then
+        for key, def in pairs(SmartSkillDefaults) do
+            if not IsBannedCombatSkill(key, key) then
+                found[key] = { Key = key, DisplayName = key, Range = def.Range,
+                    Type = def.Type, Priority = def.Priority, Cooldown = def.Cooldown }
             end
         end
     end
+    for _, skill in pairs(found) do table.insert(SmartCombat.Skills, skill) end
+    table.sort(SmartCombat.Skills, function(a, b)
+        if a.Priority == b.Priority then return a.Key > b.Key end
+        return a.Priority > b.Priority
+    end)
+end
+
+local function IsEvaFleeing(myRoot, evaRoot)
+    local delta = evaRoot.Position - myRoot.Position
+    local velocity = evaRoot.AssemblyLinearVelocity
+    if delta.Magnitude < 1 or velocity.Magnitude <= Config.SmartCombatFleeSpeed then return false end
+    return velocity.Unit:Dot(delta.Unit) > 0.35
+end
+
+local function RunSmartCombatAtEva(myRoot, evaRoot, targetDistance)
+    if not Config.SmartCombatEnabled or not myRoot or not evaRoot then return false end
+    local now = os.clock()
+    if now - SmartCombat.LastDecision < Config.SmartCombatDecisionInterval then return false end
+    SmartCombat.LastDecision = now
+    ProfileSmartSkills(false)
+    ResolveRemotes()
+    if not CombatRemote then return false end
+
+    local farOrFleeing = targetDistance > Config.SmartCombatFarDistance
+    local chosen, chosenScore
+    for _, skill in ipairs(SmartCombat.Skills) do
+        local isBeam = skill.Type == "Beam"
+        local cooldown = math.max(0.08, skill.Cooldown * Config.SkillCooldownMultiplier)
+        local elapsed = now - (State.LastSkillCastTimes[skill.Key] or 0)
+        -- ใกล้: ใช้ได้ทุกสกิลรวมถึงบีม
+        -- ไกล/กำลังหนี: ใช้เฉพาะบีม ถ้าบีมคูลดาวน์ให้วิ่งไล่เพื่อเข้าระยะประชิดต่อ
+        if targetDistance <= skill.Range and elapsed >= cooldown and (not farOrFleeing or isBeam) then
+            local score = skill.Priority * 10 + math.min(elapsed, 5)
+            if farOrFleeing and isBeam then score = score + 1000 end
+            if not chosen or score > chosenScore then chosen, chosenScore = skill, score end
+        end
+    end
+    if not chosen then return false end
+
+    local predictedAim = evaRoot.Position
+        + evaRoot.AssemblyLinearVelocity * Config.SmartCombatLeadTime
+        + Vector3.new(0, Config.SmartCombatAimHeight, 0)
+    State.LastSkillCastTimes[chosen.Key] = now
+    pcall(function()
+        if GetMousePosRemote then GetMousePosRemote:FireServer(predictedAim) end
+        if chosen.Type == "Beam" and BeamRemote then BeamRemote:FireServer(predictedAim) end
+        CombatRemote:FireServer("UseSkill", chosen.Key)
+        CombatRemote:FireServer("HitBox", chosen.Key)
+    end)
+    return true, chosen
 end
 
 --------------------------------------------------------------------------------
@@ -1897,12 +2338,133 @@ end
 --------------------------------------------------------------------------------
 -- 10. SERVER HOPPER (IF PLAYERS < 5)
 --------------------------------------------------------------------------------
-local function HopServer(forceHop, reason)
+local PrefetchedServers = {}
+local LastServerPrefetchAt = 0
+local VisitedServerFile = "LucyHub_Eva_VisitedServers.json"
+local VisitedServerIds = {}
+
+local function TrimVisitedServers()
+    local entries = {}
+    for jobId, visitedAt in pairs(VisitedServerIds) do
+        table.insert(entries, { Id = jobId, Time = tonumber(visitedAt) or 0 })
+    end
+    table.sort(entries, function(a, b) return a.Time > b.Time end)
+    local keepCount = math.max(2, tonumber(Config.ServerRecentHistorySize) or 6)
+    for index = keepCount + 1, #entries do
+        VisitedServerIds[entries[index].Id] = nil
+    end
+end
+
+local function SaveVisitedServers()
+    pcall(function()
+        TeleportService:SetTeleportSetting("LucyHubRecentServers", VisitedServerIds)
+    end)
+    if type(writefile) ~= "function" then return end
+    pcall(function() writefile(VisitedServerFile, HttpService:JSONEncode(VisitedServerIds)) end)
+end
+
+local function LoadVisitedServers()
+    pcall(function()
+        local teleportedHistory = TeleportService:GetTeleportSetting("LucyHubRecentServers")
+        if type(teleportedHistory) == "table" then
+            for jobId, visitedAt in pairs(teleportedHistory) do
+                VisitedServerIds[tostring(jobId)] = tonumber(visitedAt) or os.time()
+            end
+        end
+    end)
+    if type(isfile) == "function" and type(readfile) == "function" and isfile(VisitedServerFile) then
+        local ok, decoded = pcall(function() return HttpService:JSONDecode(readfile(VisitedServerFile)) end)
+        if ok and type(decoded) == "table" then VisitedServerIds = decoded end
+    end
+    local now = os.time()
+    for jobId, visitedAt in pairs(VisitedServerIds) do
+        if type(jobId) ~= "string" or now - (tonumber(visitedAt) or 0) > Config.ServerVisitMemorySeconds then
+            VisitedServerIds[jobId] = nil
+        end
+    end
+    if game.JobId ~= "" then VisitedServerIds[game.JobId] = now + (os.clock() % 1) end
+    TrimVisitedServers()
+    SaveVisitedServers()
+end
+
+local function MarkServerVisited(jobId)
+    if type(jobId) ~= "string" or jobId == "" then return end
+    VisitedServerIds[jobId] = os.time() + (os.clock() % 1)
+    TrimVisitedServers()
+    SaveVisitedServers()
+end
+
+LoadVisitedServers()
+
+local function FetchHealthyServers()
+    local requestFunc = GetHttpRequestFunction()
+    if not requestFunc then return {} end
+    local candidates, cursor = {}, ""
+    for _ = 1, math.max(1, tonumber(Config.ServerHopMaxPages) or 1) do
+        local url = string.format(
+            "https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Desc&limit=100%s",
+            tostring(game.PlaceId), cursor ~= "" and ("&cursor=" .. cursor) or ""
+        )
+        local ok, response = pcall(function() return requestFunc({ Url = url, Method = "GET" }) end)
+        if not ok or not response or not response.Body then break end
+        local decoded, data = pcall(function() return HttpService:JSONDecode(response.Body) end)
+        if not decoded or not data or type(data.data) ~= "table" then break end
+        for _, server in ipairs(data.data) do
+            local freeSlots = server.maxPlayers and server.playing and (server.maxPlayers - server.playing) or 0
+            if server.id ~= game.JobId and not VisitedServerIds[server.id]
+                and server.playing and server.playing >= Config.MinPlayersRequired
+                and freeSlots >= (Config.ServerHopMinFreeSlots or 1) then
+                server._freeSlots = freeSlots
+                table.insert(candidates, server)
+            end
+        end
+        cursor = data.nextPageCursor or ""
+        if cursor == "" then break end
+    end
+    table.sort(candidates, function(a, b)
+        local aFPS, bFPS = tonumber(a.fps) or 60, tonumber(b.fps) or 60
+        local aPing, bPing = tonumber(a.ping) or 150, tonumber(b.ping) or 150
+        local aScore = aFPS * 2 - aPing * 0.25 + (a._freeSlots or 0)
+        local bScore = bFPS * 2 - bPing * 0.25 + (b._freeSlots or 0)
+        -- คะแนนใกล้กันให้สลับตาม JobId เพื่อไม่เลือกหัวรายการเดิมจาก API ทุกครั้ง
+        if math.abs(aScore - bScore) < 5 then return tostring(a.id) < tostring(b.id) end
+        return aScore > bScore
+    end)
+    return candidates
+end
+
+-- เตรียมรายชื่อห้องไว้ล่วงหน้าแบบเบา ๆ เพื่อให้ตอน Hop ไม่ต้องเริ่มค้นจากศูนย์
+task.spawn(function()
+    while getgenv().KaijuEvaFarm_RunToken == RunToken do
+        if not State.IsHopping then
+            local candidates = FetchHealthyServers()
+            if #candidates > 0 then
+                PrefetchedServers = candidates
+                LastServerPrefetchAt = os.clock()
+            end
+        end
+        task.wait(math.max(5, tonumber(Config.ServerPrefetchInterval) or 8))
+    end
+end)
+
+HopServer = function(forceHop, reason)
     if State.IsHopping then return end
+    -- เมื่อเริ่มสู้ Eva แล้ว ห้ามตัดการต่อสู้ด้วย Hop จากเงื่อนไขใด ๆ
+    if State.IsEngagedWithEva then
+        State.Current = "Eva battle protected - no server hop"
+        return false
+    end
+    local protectedBossRoom = false
+    pcall(function() protectedBossRoom = IsInBossRoom() == true end)
+    if protectedBossRoom then
+        State.Current = "Boss room protected - no server hop"
+        return false
+    end
     local now = os.clock()
     if not forceHop and (now - State.LastHopAttempt) < Config.ServerHopCooldown then return end
     State.LastHopAttempt = now
     State.IsHopping = true
+    State.PortalApproachCommitted = false
     State.AutoWalking = false
     State.DesiredMoveDirection = Vector3.zero
     StopNaturalWalk(GetHumanoid())
@@ -1923,23 +2485,30 @@ local function HopServer(forceHop, reason)
             if player == LocalPlayer then teleportFailed = true end
         end)
         if requestFunc then
-            local cursor = ""
-            for _ = 1, 4 do
-                local url = string.format("https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=Desc&limit=100%s", tostring(placeId), cursor ~= "" and ("&cursor=" .. cursor) or "")
-                local success, res = pcall(function()
-                    return requestFunc({ Url = url, Method = "GET" })
-                end)
-
-                if success and res and res.Body then
-                    local jsonSuccess, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
-                    if jsonSuccess and data and data.data then
-                        for _, s in ipairs(data.data) do
-                            -- หาเซิร์ฟเวอร์ที่มีคนอย่างน้อย 6 คน และยังไม่เต็ม
-                            if s.id ~= currentJobId and s.playing and s.maxPlayers
-                                and s.playing >= 6 and s.playing <= (s.maxPlayers - 2) then
-                                print(string.format("[Kaiju Eva Farm] Verified server %s (%d/%d, at least 2 slots free). Teleporting...", tostring(s.id), s.playing, s.maxPlayers))
+            local candidates = {}
+            -- cache เกิน 12 วินาทีถือว่าเก่าและค้นใหม่ ป้องกันเลือกห้องที่เพิ่งเต็ม
+            if #PrefetchedServers > 0 and os.clock() - LastServerPrefetchAt <= 8 then
+                for _, server in ipairs(PrefetchedServers) do table.insert(candidates, server) end
+            else
+                candidates = FetchHealthyServers()
+            end
+            -- ถ้าประวัติกันห้องจนไม่มีตัวเลือก ให้เก็บเฉพาะห้องปัจจุบันแล้วค้นใหม่ทันที
+            if #candidates == 0 then
+                for jobId in pairs(VisitedServerIds) do
+                    if jobId ~= currentJobId then VisitedServerIds[jobId] = nil end
+                end
+                SaveVisitedServers()
+                candidates = FetchHealthyServers()
+            end
+            PrefetchedServers = {}
+            for _, s in ipairs(candidates) do
+                if s.id ~= currentJobId and not VisitedServerIds[s.id] and s.playing and s.maxPlayers
+                    and (s.maxPlayers - s.playing) >= (Config.ServerHopMinFreeSlots or 1) then
+                                print(string.format("[Kaiju Eva Farm] Prefetched server %s (%d/%d, %d slots free). Teleporting...", tostring(s.id), s.playing, s.maxPlayers, s.maxPlayers - s.playing))
                                 teleportFailed = false
                                 State.Current = string.format("Hop %d/%d - trying next server...", s.playing, s.maxPlayers)
+                                -- จำตั้งแต่ก่อนยิง Teleport เพื่อไม่วนกลับมาลองห้องเดิมหากห้องนั้นค้าง/เต็ม
+                                MarkServerVisited(s.id)
                                 local teleportStarted = pcall(function()
                                     TeleportService:TeleportToPlaceInstance(placeId, s.id, LocalPlayer)
                                 end)
@@ -1953,15 +2522,6 @@ local function HopServer(forceHop, reason)
                                         break
                                     end
                                 end
-                            end
-                        end
-                    end
-                    if serverFound then break end
-                    if data and data.nextPageCursor then
-                        cursor = data.nextPageCursor
-                    else
-                        break
-                    end
                 end
             end
         end
@@ -1969,17 +2529,15 @@ local function HopServer(forceHop, reason)
         if failureConnection then failureConnection:Disconnect() end
 
         if not serverFound then
-            -- แนวทางเดียวกับ AutoHop.lua: ถ้า API ไม่มีข้อมูล ให้ fallback เป็น Hop ปกติ
-            State.Current = "No server data - fallback Hop..."
-            task.wait(0.3)
-            pcall(function()
-                TeleportService:Teleport(placeId, LocalPlayer)
-            end)
-        end
-
-        if not serverFound then
-            task.wait(Config.HopRetryDelay or 3)
+            if not requestFunc then
+                State.Current = "Hop unavailable: executor has no HTTP request support"
+                State.IsHopping = false
+                return
+            end
+            State.Current = "No available JobId - retrying fast..."
+            task.wait(Config.HopRetryDelay or 0.25)
             State.IsHopping = false
+            HopServer(true, "Fast JobId retry...")
         else
             -- ถ้าคำขอ Teleport ถูกยอมรับแต่ยังไม่ย้ายจริง (เช่นห้องเต็มระหว่างทาง) ให้ค้นใหม่
             task.delay(Config.HopRetryDelay or 3, function()
@@ -2263,7 +2821,7 @@ local function CreateLucyStatusUI()
     local resultValue = row("RESULT", "Eva 0  •  Tokens 0", Color3.fromRGB(210, 190, 255))
 
     local webhookBox = Instance.new("TextBox")
-    webhookBox.Size = UDim2.new(1, -92, 0, 35)
+    webhookBox.Size = UDim2.new(1, -214, 0, 35)
     webhookBox.Position = UDim2.fromOffset(14, 197)
     webhookBox.BackgroundColor3 = Color3.fromRGB(27, 29, 40)
     webhookBox.BorderSizePixel = 0
@@ -2282,7 +2840,7 @@ local function CreateLucyStatusUI()
 
     local saveButton = Instance.new("TextButton")
     saveButton.Size = UDim2.fromOffset(58, 35)
-    saveButton.Position = UDim2.new(1, -72, 0, 197)
+    saveButton.Position = UDim2.new(1, -136, 0, 197)
     saveButton.BackgroundColor3 = Color3.fromRGB(104, 72, 235)
     saveButton.BorderSizePixel = 0
     saveButton.Text = "SAVE"
@@ -2291,6 +2849,19 @@ local function CreateLucyStatusUI()
     saveButton.TextSize = 11
     saveButton.Parent = main
     Instance.new("UICorner", saveButton).CornerRadius = UDim.new(0, 8)
+
+    local hopButton = Instance.new("TextButton")
+    hopButton.Name = "HopNow"
+    hopButton.Size = UDim2.fromOffset(58, 35)
+    hopButton.Position = UDim2.new(1, -72, 0, 197)
+    hopButton.BackgroundColor3 = Color3.fromRGB(210, 86, 92)
+    hopButton.BorderSizePixel = 0
+    hopButton.Text = "HOP"
+    hopButton.TextColor3 = Color3.new(1, 1, 1)
+    hopButton.Font = Enum.Font.GothamBold
+    hopButton.TextSize = 11
+    hopButton.Parent = main
+    Instance.new("UICorner", hopButton).CornerRadius = UDim.new(0, 8)
 
     local hint = Instance.new("TextLabel")
     hint.Size = UDim2.new(1, -28, 0, 28)
@@ -2312,6 +2883,20 @@ local function CreateLucyStatusUI()
             if saveButton and saveButton.Parent then
                 saveButton.Text = "SAVE"
                 saveButton.BackgroundColor3 = Color3.fromRGB(104, 72, 235)
+            end
+        end)
+    end)
+
+    hopButton.Activated:Connect(function()
+        if State.IsHopping then return end
+        hopButton.Text = "..."
+        hopButton.BackgroundColor3 = Color3.fromRGB(130, 130, 145)
+        State.Current = "Manual Hop requested..."
+        HopServer(true, "Manual Hop button")
+        task.delay(1.2, function()
+            if hopButton and hopButton.Parent then
+                hopButton.Text = "HOP"
+                hopButton.BackgroundColor3 = Color3.fromRGB(210, 86, 92)
             end
         end)
     end)
@@ -2672,7 +3257,8 @@ task.spawn(function()
             task.wait(0.1)
             continue
         end
-        if State.WaitingForPlayersDetected and not State.PortalHoldLocked then
+        -- ข้อความ Waiting for players แบบไม่มีเวลานับหมายถึงรอบนี้ยังเริ่มไม่ได้: Hop ทันทีเสมอ
+        if State.WaitingForPlayersDetected and not State.IsEngagedWithEva and not IsInBossRoom() then
             StopNaturalWalk(GetHumanoid())
             DisableRunning()
             State.PortalRouteActive = false
@@ -2693,9 +3279,22 @@ task.spawn(function()
 
         -- ตรวจสอบการเกิดของตัวละคร
         if not IsAliveAndSpawned() then
-            State.Current = "Spawning Kaiju..."
-            AutoSpawnCharacter()
-            task.wait(0.1)
+            if not State.BossTimerScanReady then
+                State.Current = "Portal not loaded - spawning to initialize scan..."
+                AutoSpawnCharacter()
+            else
+                local eligible, reason = ResolveServerEligibilityBeforeSpawn()
+                if eligible == true then
+                    State.Current = "Timer accepted - spawning Kaiju..."
+                    AutoSpawnCharacter()
+                elseif eligible == false then
+                    State.Current = tostring(reason) .. " - hopping before spawn..."
+                    HopServer(true, State.Current)
+                else
+                    State.Current = reason
+                end
+            end
+            task.wait(0.03)
             continue
         end
 
@@ -2722,10 +3321,11 @@ task.spawn(function()
             continue
         end
 
-        -- ถ้าเหลือต่ำกว่า 1 นาที แต่ยังไม่มีผู้เล่นอื่นมารอในรัศมี 300 studs
+        -- ถ้าเหลือต่ำกว่า 3 นาที แต่ยังไม่มีผู้เล่นอื่นมารอในรัศมี 300 studs
         -- ให้ย้ายไปหาเซิร์ฟเวอร์ที่ตรวจสอบแล้วทันที
-        if not inBossRoom and not State.PortalHoldLocked and bossSpawnSeconds
-            and bossSpawnSeconds < 60
+        if not inBossRoom and not State.PortalHoldLocked and not State.PortalRouteActive
+            and not State.PortalApproachCommitted and bossSpawnSeconds
+            and bossSpawnSeconds < Config.SecondRoundUrgentSeconds
             and not HasOtherPlayerNearPortal() then
             StopNaturalWalk(myHum)
             DisableRunning()
@@ -2741,17 +3341,29 @@ task.spawn(function()
         end
 
         ------------------------------------------------------------------------
-        -- ถ้าขึ้นข้อความ "In Boss Battle" และเรายังไม่ได้เข้าห้อง ให้ Hop ทันที
-        -- ไม่วาร์ปเข้าห้องกลางคัน เพราะการเข้าไม่ทันประตูจะไม่ได้ Token
+        -- ถ้าขึ้น In Boss Battle / Boss in Battle นอก Colosseum ให้รอ 4 วินาทีแล้วค่อย Hop
+        -- ถ้าอยู่ในลาน Colosseum จะไม่ Hop เพราะถือว่าเข้ารอบบอสสำเร็จแล้ว
         ------------------------------------------------------------------------
         if not inBossRoom and IsBossBattleInProgress() then
             StopNaturalWalk(myHum)
             DisableRunning()
             State.PortalRouteActive = false
             State.PortalRouteIndex = 1
-            HopServer(true, "In Boss Battle detected - hopping now...")
-            task.wait(1)
+            State.BossBattleTextSince = State.BossBattleTextSince or os.clock()
+            local battleWaited = os.clock() - State.BossBattleTextSince
+            if battleWaited >= Config.BossBattleHopDelay then
+                HopServer(true, "Boss battle text remained for 4s outside Colosseum - hopping...")
+                task.wait(1)
+            else
+                State.Current = string.format("Boss battle detected - Hop in %.1fs...",
+                    Config.BossBattleHopDelay - battleWaited)
+                task.wait(0.05)
+            end
             continue
+        elseif inBossRoom then
+            State.BossBattleTextSince = nil
+        else
+            State.BossBattleTextSince = nil
         end
 
         ------------------------------------------------------------------------
@@ -2759,6 +3371,7 @@ task.spawn(function()
         ------------------------------------------------------------------------
         if inBossRoom then
             State.IsEngagedWithEva = true
+            State.PortalApproachCommitted = false
             State.PortalRouteActive = false
             State.PortalRouteIndex = 1
             State.PortalHoldLocked = false
@@ -2819,6 +3432,7 @@ task.spawn(function()
                     EnsureRunning()
                     State.Current = string.format("Sprinting on ground to Eva (%d studs)...", math.floor(horizDist))
                     WalkNaturallyToward(myHum, myRoot, groundTargetPos)
+                    RunSmartCombatAtEva(myRoot, bRoot, horizDist)
                 else
                     -- ระยะโจมตี: หันหน้าตามแนวราบระดับพื้น และสแปมสกิลใส่บอส
                     -- ⚠️ ถ้าสกิลไหนล็อคขา ก็ปล่อยให้ระบบเกมและแอนิเมชันล็อคขาตามปกติ เท้าติดพื้นเนียนที่สุด 100%
@@ -2826,7 +3440,7 @@ task.spawn(function()
                     StopNaturalWalk(myHum)
                     UpdateSmoothCharacterAim(myRoot, myHum, bRoot.Position)
 
-                    SpamSkillsAtEva(bRoot.Position, horizDist)
+                    RunSmartCombatAtEva(myRoot, bRoot, horizDist)
                 end
             else
                 State.Current = "In Boss Room (Waiting for Eva target)..."
@@ -2889,7 +3503,7 @@ task.spawn(function()
                 continue
             end
 
-            -- ตรวจสอบระยะห่างจากตำแหน่งศูนย์กลางวงประตูวาป 1918, 72, 863
+            -- ตรวจสอบระยะห่างจากตำแหน่งศูนย์กลางวงประตูวาป 1913, 65, 875
             -- ใช้ระยะแนวราบและยอมรับพื้นที่รอบ Portal ไม่บังคับเดินทับจุดกลาง
             local distToPortal = (Vector2.new(myRoot.Position.X, myRoot.Position.Z)
                 - Vector2.new(Config.PortalWaitPosition.X, Config.PortalWaitPosition.Z)).Magnitude
@@ -2898,16 +3512,18 @@ task.spawn(function()
                 - Vector2.new(safeStandPosition.X, safeStandPosition.Z)).Magnitude
             -- เมื่อเข้ามาใกล้วงครั้งแรกแล้ว ให้ล็อกสถานะยืนรอไว้จนกว่าจะถูกวาร์ปเข้าห้องบอส
             -- ไม่ประเมินเส้นทางใหม่แม้ระยะจะแกว่งจากฟิสิกส์หรือมีผู้เล่นชน
-            if portalCenterOccupied and distToPortal <= Config.PortalHoldRadius and distToSafeStand > 4 then
+            if portalCenterOccupied and distToPortal <= Config.PortalHoldRadius and distToSafeStand > 6 then
                 -- มีคนยืนทับจุดกลาง: เดินเขยิบไปตำแหน่งข้าง ๆ โดยยังอยู่ในวง Portal
                 State.PortalHoldLocked = false
                 State.PortalRouteActive = false
                 State.PortalRouteIndex = 1
+                State.PortalApproachCommitted = true
                 EnsureRunning()
                 State.Current = string.format("Portal center occupied - stepping aside (%d studs)...", math.floor(distToSafeStand))
                 WalkNaturallyToward(myHum, myRoot, safeStandPosition)
             elseif State.PortalHoldLocked or distToPortal <= Config.PortalHoldRadius then
                 State.PortalHoldLocked = true
+                State.PortalApproachCommitted = true
                 State.PortalRouteActive = false
                 State.PortalRouteIndex = 1
                 StopNaturalWalk(myHum)
@@ -2923,6 +3539,7 @@ task.spawn(function()
                 if State.PortalRouteActive or #Players:GetPlayers() > 1 or HasOtherPlayerNearPortal() then
                     if not State.PortalRouteActive then
                         State.PortalRouteActive = true
+                        State.PortalApproachCommitted = true
                         State.PortalRouteIndex = 1
                         State.Current = "Player near Portal - using natural route..."
                         StopNaturalWalk(myHum)
@@ -2963,12 +3580,14 @@ task.spawn(function()
                         task.wait(0.05)
                     else
                         State.Current = "Portal clear - moving to Portal..."
+                        State.PortalApproachCommitted = true
                         InstantWarp(CFrame.new(Config.PortalWaitPosition))
                         task.wait(0.2)
                     end
                 end
             else
                 -- ยืนรอในวงประตูวาปอย่างสงบ ปล่อยฟิสิกส์ธรรมชาติ รอเกมพาเทเลพอร์ตเข้าห้องบอส
+                State.PortalApproachCommitted = true
                 State.PortalRouteActive = false
                 State.PortalRouteIndex = 1
                 StopNaturalWalk(myHum)
