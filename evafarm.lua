@@ -48,6 +48,9 @@ local Config = {
     PortalArrivalRadius = 18,
     -- แตะบริเวณใกล้วงแล้วให้ล็อกยืนรอทันที ป้องกันเส้นทางสั่งเดินออกจากวงภายหลัง
     PortalHoldRadius = 30,
+    -- ถ้ามีผู้เล่นยืนทับจุดกลาง Portal ให้เราไปยืนเยื้องข้างแทน
+    PortalExactOccupancyRadius = 8,
+    PortalSideStepDistance = 12,
 
     -- ความเร็วเสริมขณะระบบกำลังสั่งให้ตัวละครวิ่ง (studs/วินาที)
     RunSpeedBoost = 20,
@@ -659,6 +662,9 @@ local function StopNaturalWalk(humanoid)
     end
 end
 
+-- ประกาศล่วงหน้าเพื่อให้ระบบ collision เรียกใช้ได้ก่อนส่วนตรวจห้องบอส
+local IsInBossRoom
+
 -- ปิด collision ของผู้เล่นอื่นเฉพาะฝั่ง client ระหว่างตาม Eva
 -- เพื่อให้เดินผ่านกันได้โดยไม่ติดร่าง และเก็บค่าเดิมไว้คืนภายหลัง
 local PlayerCollisionOriginal = setmetatable({}, { __mode = "k" })
@@ -690,7 +696,8 @@ end
 
 local PlayerNoCollisionConnection = RunService.Heartbeat:Connect(function()
     if getgenv().KaijuEvaFarm_RunToken ~= RunToken then return end
-    local shouldDisable = State.IsEngagedWithEva and State.AutoWalking
+    -- ปิด collision เฉพาะผู้เล่นอื่น และเฉพาะตอนอยู่ในห้องบอสเท่านั้น
+    local shouldDisable = IsInBossRoom and IsInBossRoom()
     if shouldDisable then
         local now = os.clock()
         if now - LastPlayerCollisionUpdate >= 0.15 then
@@ -701,6 +708,32 @@ local PlayerNoCollisionConnection = RunService.Heartbeat:Connect(function()
         RestoreOtherPlayerCollisions()
     end
 end)
+
+local function GetSafePortalStandPosition()
+    local center = Config.PortalWaitPosition
+    local center2D = Vector2.new(center.X, center.Z)
+    local occupied = false
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local root = player.Character:FindFirstChild("HumanoidRootPart") or player.Character.PrimaryPart
+            if root and root:IsA("BasePart") then
+                local distance = (Vector2.new(root.Position.X, root.Position.Z) - center2D).Magnitude
+                if distance <= (Config.PortalExactOccupancyRadius or 8) then
+                    occupied = true
+                    break
+                end
+            end
+        end
+    end
+
+    if not occupied then return center, false end
+
+    -- เลือกข้างแบบคงที่ตาม UserId เพื่อไม่ให้ตำแหน่งสลับไปมาทุกเฟรม
+    local angle = math.rad((LocalPlayer.UserId % 8) * 45)
+    local distance = Config.PortalSideStepDistance or 12
+    return center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance), true
+end
 
 local function HasOtherPlayerNearPortal()
     local portal2D = Vector2.new(Config.PortalWaitPosition.X, Config.PortalWaitPosition.Z)
@@ -1407,7 +1440,7 @@ end)
 --------------------------------------------------------------------------------
 -- 7. EVA BOSS DETECTION
 --------------------------------------------------------------------------------
-local function IsInBossRoom()
+IsInBossRoom = function()
     if LocalPlayer:GetAttribute("InBossRoom") == true then
         return true
     end
@@ -2860,9 +2893,20 @@ task.spawn(function()
             -- ใช้ระยะแนวราบและยอมรับพื้นที่รอบ Portal ไม่บังคับเดินทับจุดกลาง
             local distToPortal = (Vector2.new(myRoot.Position.X, myRoot.Position.Z)
                 - Vector2.new(Config.PortalWaitPosition.X, Config.PortalWaitPosition.Z)).Magnitude
+            local safeStandPosition, portalCenterOccupied = GetSafePortalStandPosition()
+            local distToSafeStand = (Vector2.new(myRoot.Position.X, myRoot.Position.Z)
+                - Vector2.new(safeStandPosition.X, safeStandPosition.Z)).Magnitude
             -- เมื่อเข้ามาใกล้วงครั้งแรกแล้ว ให้ล็อกสถานะยืนรอไว้จนกว่าจะถูกวาร์ปเข้าห้องบอส
             -- ไม่ประเมินเส้นทางใหม่แม้ระยะจะแกว่งจากฟิสิกส์หรือมีผู้เล่นชน
-            if State.PortalHoldLocked or distToPortal <= Config.PortalHoldRadius then
+            if portalCenterOccupied and distToPortal <= Config.PortalHoldRadius and distToSafeStand > 4 then
+                -- มีคนยืนทับจุดกลาง: เดินเขยิบไปตำแหน่งข้าง ๆ โดยยังอยู่ในวง Portal
+                State.PortalHoldLocked = false
+                State.PortalRouteActive = false
+                State.PortalRouteIndex = 1
+                EnsureRunning()
+                State.Current = string.format("Portal center occupied - stepping aside (%d studs)...", math.floor(distToSafeStand))
+                WalkNaturallyToward(myHum, myRoot, safeStandPosition)
+            elseif State.PortalHoldLocked or distToPortal <= Config.PortalHoldRadius then
                 State.PortalHoldLocked = true
                 State.PortalRouteActive = false
                 State.PortalRouteIndex = 1
