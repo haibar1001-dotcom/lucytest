@@ -67,7 +67,7 @@ local Config = {
     -- สแกนประตูถี่ขึ้น แต่ไม่ใช้ลูป busy-wait เพื่อไม่ให้มือถือค้าง
     CriticalTextScanInterval = 0.02,
     -- Hop ต่อไปจนกว่าจะเจอห้องที่เวลา Boss Spawn เหลือไม่เกินจำนวนนี้ (นาที)
-    MaxBossSpawnMinutes = 15, -- เวลาเกิดบอส
+    MaxBossSpawnMinutes = 10, -- เวลาเกิดบอส
     PlayerAvoidDistance = 55,
     PlayerAvoidStrength = 1.15,
     ObstacleProbeDistance = 65,
@@ -96,6 +96,24 @@ local Config = {
     ServerHopCooldown   = 1, -- วินาที: Hop หนึ่งครั้งแล้วเว้น 1 วิ
     TeleportAttemptTimeout = 3,
     HopRetryDelay = 1,
+
+    -- 🛒 AUTO BUY EVENT BOOST
+    -- เปิดใช้งานและใส่ชื่อได้หลายรายการ ระบบจะซื้อทีละรายการตามลำดับแล้ววนใหม่
+    AutoBuyBoostEnabled = false,
+    AutoBuyBoosts = {
+        -- "60 Minutes Cell Boost",
+        -- "60 Minutes Exp Boost",
+        -- "30 Minutes Cell Boost",
+        -- "30 Minutes Exp Boost",
+    },
+    AutoBuyBoostAmount = 1,
+    AutoBuyBoostDelay = 0.8,
+    AutoBuyBoostCycleDelay = 3,
+
+    -- 📦 ใช้ไอเท็ม EXP ทั้งหมดกับ Kaiju ที่เลือกฟาร์ม (ไม่แตะไอเท็ม Boost)
+    AutoUseExpEnabled = false,
+    AutoUseExpDelay = 0.6,
+    AutoUseExpScanInterval = 5,
 
     -- ⏱️ หน่วงเวลาก่อนเริ่มโจมตีเมื่อ Eva เกิด (วินาที)
     EvaEngageDelay      = 0,
@@ -362,6 +380,67 @@ local function ResolveRemotes()
         end
     end
 end
+
+--------------------------------------------------------------------------------
+-- 2.1 AUTO BUY EVENT BOOSTS
+--------------------------------------------------------------------------------
+local EventBoostData = {
+    ["60 Minutes Cell Boost"] = { Tokens = 100, Stocks = 2 },
+    ["60 Minutes Exp Boost"] = { Tokens = 100, Stocks = 2 },
+    ["30 Minutes Cell Boost"] = { Tokens = 50, Stocks = 5 },
+    ["30 Minutes Exp Boost"] = { Tokens = 50, Stocks = 5 },
+}
+
+local function GetEventPurchaseState()
+    local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+    local playerData = dataFolder and dataFolder:FindFirstChild(LocalPlayer.UserId .. "_Data")
+    local eventData = playerData and playerData:FindFirstChild("HalloweenSS1")
+    return eventData and eventData:FindFirstChild("Tokens"), eventData and eventData:FindFirstChild("Purchased")
+end
+
+local function AutoBuyConfiguredBoosts()
+    if not Config.AutoBuyBoostEnabled or type(Config.AutoBuyBoosts) ~= "table"
+        or #Config.AutoBuyBoosts == 0 then return end
+
+    local eventShopRemote = RemotesFolder and RemotesFolder:FindFirstChild("EventShopRemote")
+    if not eventShopRemote or not eventShopRemote:IsA("RemoteFunction") then return end
+
+    local tokensValue, purchasedFolder = GetEventPurchaseState()
+    if not tokensValue or not purchasedFolder then return end
+
+    for _, boostName in ipairs(Config.AutoBuyBoosts) do
+        if getgenv().KaijuEvaFarm_RunToken ~= RunToken then return end
+        local item = EventBoostData[tostring(boostName)]
+        if item then
+            local purchasedValue = purchasedFolder:FindFirstChild(boostName)
+            local alreadyBought = purchasedValue and tonumber(purchasedValue.Value) or 0
+            local remainingStock = math.max(item.Stocks - alreadyBought, 0)
+            local requested = math.max(1, math.floor(tonumber(Config.AutoBuyBoostAmount) or 1))
+            local affordable = math.floor((tonumber(tokensValue.Value) or 0) / item.Tokens)
+            local amount = math.min(requested, remainingStock, affordable)
+
+            if amount > 0 then
+                State.Current = string.format("Buying %s x%d...", boostName, amount)
+                local ok, success, message = pcall(function()
+                    return eventShopRemote:InvokeServer(boostName, amount)
+                end)
+                if not ok or not success then
+                    warn("[Auto Buy Boost] Buy failed:", boostName, message or success)
+                end
+                task.wait(math.max(0.25, tonumber(Config.AutoBuyBoostDelay) or 0.8))
+            end
+        else
+            warn("[Auto Buy Boost] Unknown boost name:", tostring(boostName))
+        end
+    end
+end
+
+task.spawn(function()
+    while getgenv().KaijuEvaFarm_RunToken == RunToken do
+        pcall(AutoBuyConfiguredBoosts)
+        task.wait(math.max(1, tonumber(Config.AutoBuyBoostCycleDelay) or 3))
+    end
+end)
 ResolveRemotes()
 
 --------------------------------------------------------------------------------
@@ -1047,6 +1126,70 @@ local function PrepareSelectedKaiju()
     end)
     return true
 end
+
+--------------------------------------------------------------------------------
+-- 6.1 AUTO USE EXP ITEMS ON SELECTED FARM KAIJU
+--------------------------------------------------------------------------------
+local AutoUseExpBusy = false
+
+local function IsConsumableExpItem(item)
+    if not item then return false end
+    local name = tostring(item.Name)
+    local lower = name:lower()
+    return lower:find("exp", 1, true) ~= nil
+        and lower:find("boost", 1, true) == nil
+        and tonumber(name:match("%d+")) ~= nil
+end
+
+local function GetInventoryItemAmount(item)
+    if item:IsA("ValueBase") then
+        return math.max(0, math.floor(tonumber(item.Value) or 0))
+    end
+    local amountValue = item:FindFirstChild("Amount") or item:FindFirstChild("Value")
+    if amountValue and amountValue:IsA("ValueBase") then
+        return math.max(0, math.floor(tonumber(amountValue.Value) or 0))
+    end
+    return 1
+end
+
+local function AutoUseAllExpItems()
+    if AutoUseExpBusy or not Config.AutoUseExpEnabled then return end
+    AutoUseExpBusy = true
+
+    pcall(function()
+        ResolveRemotes()
+        local confirmRemote = FireServerRemote or (RemotesFolder and RemotesFolder:FindFirstChild("FireServer"))
+        if not confirmRemote or not confirmRemote:IsA("RemoteEvent") then return end
+
+        local dataFolder = ReplicatedStorage:FindFirstChild("Data")
+        local playerData = dataFolder and dataFolder:FindFirstChild(LocalPlayer.UserId .. "_Data")
+        local inventory = playerData and playerData:FindFirstChild("MainInventory")
+        if not inventory then return end
+
+        local targetKaiju = GetExactOwnedKaijuName(Config.SelectedKaiju or "Thermonuclear Godzilla")
+        for _, item in ipairs(inventory:GetChildren()) do
+            if getgenv().KaijuEvaFarm_RunToken ~= RunToken then return end
+            if IsConsumableExpItem(item) then
+                local amount = GetInventoryItemAmount(item)
+                for _ = 1, amount do
+                    if not item.Parent or getgenv().KaijuEvaFarm_RunToken ~= RunToken then break end
+                    State.Current = string.format("Using %s on %s...", item.Name, targetKaiju)
+                    confirmRemote:FireServer("Confirm", item.Name, targetKaiju)
+                    task.wait(math.max(0.5, tonumber(Config.AutoUseExpDelay) or 0.6))
+                end
+            end
+        end
+    end)
+
+    AutoUseExpBusy = false
+end
+
+task.spawn(function()
+    while getgenv().KaijuEvaFarm_RunToken == RunToken do
+        AutoUseAllExpItems()
+        task.wait(math.max(1, tonumber(Config.AutoUseExpScanInterval) or 5))
+    end
+end)
 
 local function SelectIslandInMap(mapFrame)
     local desired = Config.SpawnIsland or "Tokyo"
